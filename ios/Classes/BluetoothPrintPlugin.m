@@ -169,9 +169,20 @@
         }else if([@"qrcode" isEqualToString:type]){
             [command addQRCode:[x intValue] :[y intValue] :@"L" :5 :@"A" :0 :content];
         }else if([@"image" isEqualToString:type]){
-            NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
-            UIImage *image = [UIImage imageWithData:decodeData];
-            [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:300 withImage:image];
+            // Calculate the target size while maintaining the original aspect ratio
+          CGSize originalSize = image.size;
+          CGFloat scaleFactor = maxWidth / originalSize.width;
+          CGSize targetSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
+
+          // Create a renderer with the calculated target size
+          UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:targetSize];
+
+          // Render the image and get a new data representation
+          NSData *renderedImageData = [renderer JPEGDataWithCompressionQuality:1 actions:^(UIGraphicsImageRendererContext * _Nonnull context) {
+              [image drawInRect:CGRectMake(0, 0, targetSize.width, targetSize.height)];
+          }];
+          UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
+          [command addOriginrastBitImage:resizedImage];
         }
        
     }
