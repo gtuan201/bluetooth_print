@@ -136,7 +136,8 @@
 -(NSData *)mapToTscCommand:(NSDictionary *) args {
     NSDictionary *config = [args objectForKey:@"config"];
     NSMutableArray *list = [args objectForKey:@"data"];
-    
+
+    NSNumber *count = ![config objectForKey:@"count"]?@"1" : [config objectForKey:@"count"];
     NSNumber *width = ![config objectForKey:@"width"]?@"48" : [config objectForKey:@"width"];
     NSNumber *height = ![config objectForKey:@"height"]?@"80" : [config objectForKey:@"height"];
     NSNumber *gap = ![config objectForKey:@"gap"]?@"2" : [config objectForKey:@"gap"];
@@ -161,6 +162,7 @@
         NSString *content = [m objectForKey:@"content"];
         NSNumber *x = ![m objectForKey:@"x"]?@0 : [m objectForKey:@"x"];
         NSNumber *y = ![m objectForKey:@"y"]?@0 : [m objectForKey:@"y"];
+        NSNumber *imageWidth = ![m objectForKey:@"width"]?@300 : [m objectForKey:@"width"];
         
         if([@"text" isEqualToString:type]){
             [command addTextwithX:[x intValue] withY:[y intValue] withFont:@"TSS24.BF2" withRotation:0 withXscal:1 withYscal:1 withText:content];
@@ -169,25 +171,14 @@
         }else if([@"qrcode" isEqualToString:type]){
             [command addQRCode:[x intValue] :[y intValue] :@"L" :5 :@"A" :0 :content];
         }else if([@"image" isEqualToString:type]){
-            // Calculate the target size while maintaining the original aspect ratio
-          CGSize originalSize = image.size;
-          CGFloat scaleFactor = maxWidth / originalSize.width;
-          CGSize targetSize = CGSizeMake(originalSize.width * scaleFactor, originalSize.height * scaleFactor);
+             NSData *decodeData = [[NSData alloc] initWithBase64EncodedString:content options:0];
+             UIImage *image = [UIImage imageWithData:decodeData];
+             [command addBitmapwithX:[x intValue] withY:[y intValue] withMode:0 withWidth:imageWidth withImage:image];
+         }
 
-          // Create a renderer with the calculated target size
-          UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:targetSize];
-
-          // Render the image and get a new data representation
-          NSData *renderedImageData = [renderer JPEGDataWithCompressionQuality:1 actions:^(UIGraphicsImageRendererContext * _Nonnull context) {
-              [image drawInRect:CGRectMake(0, 0, targetSize.width, targetSize.height)];
-          }];
-          UIImage *resizedImage = [UIImage imageWithData:renderedImageData];
-          [command addOriginrastBitImage:resizedImage];
-        }
-       
     }
     
-    [command addPrint:1 :1];
+    [command addPrint:1 :count];
     return [command getCommand];
 }
 
